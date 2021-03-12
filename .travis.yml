@@ -31,3 +31,4 @@ before_install:
   -D3RDPARTY_TK_LIBRARY_DIR:FILEPATH=$BASE/FreeCADLibs/lib"
   cmake -D ${CMAKE_OPTS} -A x64 -S occt -B build
   cmake --build build --config Release
+  
