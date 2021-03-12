@@ -1,0 +1,8 @@
+FreeCADLibs.7z
+FreeCADLibs/
+tmp/
+build/
+build-gui/
+install/
+occt/
+rapidjson-1.1.0/

@@ -1,55 +1,45 @@
 os: windows
+language: cpp
+env:
+  - GENERATOR="Visual Studio 15 2017 Win64"
+  - MSBUILD_PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin"
+  - CLCACHE_PATH="C:\Users\travis\build\FreeCAD\FreeCAD"
+  - VS15=true
+  - CCACHE_TEMPDIR=/tmp/.ccache-temp
+  - CCACHE_COMPRESS=1
+  - CCACHE_DIR=$HOME/.ccache
+  - CACHE_NAME=JOB5
+  - CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE:-Release}
+  - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=/usr/bin/c++ -DCMAKE_C_COMPILER=/usr/bin/cc -DPYTHON_EXECUTABLE=/usr/bin/python3 -DBUILD_FEM_NETGEN=ON"
+  - CMAKE_OPTS="-DBUILD_FEM_NETGEN=ON -DFREECAD_RELEASE_PDB=OFF -DFREECAD_RELEASE_SEH=OFF" 
 
-jobs:
-  fast_finish: true  # https://blog.travis-ci.com/2013-11-27-fast-finishing-builds
-  language: cpp
-        env:
-          - CMAKE_OPTS="-DBUILD_FEM_NETGEN=ON -DFREECAD_RELEASE_PDB=OFF -DFREECAD_RELEASE_SEH=OFF"
-          - GENERATOR="Visual Studio 15 2017 Win64"
-          - PYTHON_MAJOR_VERSION=3
-          - MSBUILD_PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin"
-          - TEST_PATH="C:\Users\travis\build\FreeCAD\FreeCAD\build\bin"
-          - CLCACHE_PATH="C:\Users\travis\build\FreeCAD\FreeCAD"
-          - VS15=true
-          - CCACHE_TEMPDIR=/tmp/.ccache-temp
-          - CCACHE_COMPRESS=1
-          - CCACHE_DIR=$HOME/.ccache
-          - CACHE_NAME=JOB5
-          # enable this if clcache extended log is needed
-          #- CLCACHE_LOG=1
-        cache:
-          directories:
-            - $HOME/clcache
 before_install:
-- |-
-    case $TRAVIS_OS_NAME in
-      windows)
-        [[ ! -f C:/tools/msys64/msys2_shell.cmd ]] && rm -rf C:/tools/msys64
-        choco uninstall -y mingw
-        choco upgrade --no-progress -y msys2
-        export msys2='cmd //C RefreshEnv.cmd '
-        export msys2+='& set MSYS=winsymlinks:nativestrict '
-        export msys2+='& C:\\tools\\msys64\\msys2_shell.cmd -defterm -no-start'
-        export mingw64="$msys2 -mingw64 -full-path -here -c "\"\$@"\" --"
-        export msys2+=" -msys2 -c "\"\$@"\" --"
-        $msys2 pacman --sync --noconfirm --needed mingw-w64-x86_64-toolchain
-        ## Install more MSYS2 packages from https://packages.msys2.org/base here
-        taskkill //IM gpg-agent.exe //F  # https://travis-ci.community/t/4967
-        export PATH=/C/tools/msys64/mingw64/bin:$PATH
-        export MAKE=mingw32-make  # so that Autotools can find it
-        ;;
-    esac
-
-before_cache:
-- |-
-    case $TRAVIS_OS_NAME in
-      windows)
-        # https://unix.stackexchange.com/a/137322/107554
-        $msys2 pacman --sync --clean --noconfirm
-        ;;
-    esac
-
-cache:
-    directories:
-    - $HOME/AppData/Local/Temp/chocolatey
-    - /C/tools/msys64
+- |
+  curl -L https://github.com/apeltauer/FreeCAD/releases/download/LibPack_12.5.2/FreeCADLibs_12.5.2_x64_VC17.7z --output FreeCADLibs.7z
+  7z x FreeCADLibs.7z > /dev/null
+  mv FreeCADLibs_12.5.2_x64_VC17 FreeCADLibs 
+  rm -f FreeCADLibs.7z
+  mkdir install
+  mkdir build
+  git clone --branch V7_5_1_BF https://gitlab.com/blobfish/occt.git
+  curl -L https://github.com/Tencent/rapidjson/archive/v1.1.0.zip --output rapidjson-1.1.0.zip
+  7z x rapidjson-1.1.0.zip 
+  rm -f rapidjson-1.1.0.zip
+  BASE=$PWD
+  CMAKE_OPTS="\
+  -D3RDPARTY_FREETYPE_DLL:FILEPATH=$BASE/FreeCADLibs/bin/freetype.dll \
+  -D3RDPARTY_FREETYPE_DLL_DIR:PATH=$BASE/FreeCADLibs/bin \
+  -D3RDPARTY_FREETYPE_INCLUDE_DIR_freetype2:FILEPATH=$BASE/FreeCADLibs/include/freetype2 \
+  -D3RDPARTY_FREETYPE_INCLUDE_DIR_ft2build:FILEPATH=$BASE/FreeCADLibs/include/freetype2 \
+  -D3RDPARTY_FREETYPE_LIBRARY:FILEPATH=$BASE/FreeCADLibs/lib/freetype.lib \
+  -D3RDPARTY_FREETYPE_LIBRARY_DIR:PATH=$BASE/FreeCADLibs/lib \
+  -D3RDPARTY_RAPIDJSON_DIR:PATH=$BASE/rapidjson-1.1.0 \
+  -D3RDPARTY_RAPIDJSON_INCLUDE_DIR:PATH=$BASE/rapidjson-1.1.0/include \
+  -D3RDPARTY_TCL_DLL_DIR:FILEPATH=$BASE/FreeCADLibs/bin \
+  -D3RDPARTY_TCL_INCLUDE_DIR:FILEPATH=$BASE/FreeCADLibs/include \
+  -D3RDPARTY_TCL_LIBRARY_DIR:FILEPATH=$BASE/FreeCADLibs/lib \
+  -D3RDPARTY_TK_DLL_DIR:FILEPATH=$BASE/FreeCADLibs/bin \
+  -D3RDPARTY_TK_INCLUDE_DIR:FILEPATH=$BASE/FreeCADLibs/include \
+  -D3RDPARTY_TK_LIBRARY_DIR:FILEPATH=$BASE/FreeCADLibs/lib"
+  cmake -D ${CMAKE_OPTS} -A x64 -S occt -B build
+  cmake --build build --config Release
