@@ -1,17 +1,5 @@
 os: windows
 language: cpp
-env:
-  - GENERATOR="Visual Studio 15 2017 Win64"
-  - MSBUILD_PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin"
-  - CLCACHE_PATH="C:\Users\travis\build\FreeCAD\FreeCAD"
-  - VS15=true
-  - CCACHE_TEMPDIR=/tmp/.ccache-temp
-  - CCACHE_COMPRESS=1
-  - CCACHE_DIR=$HOME/.ccache
-  - CACHE_NAME=JOB5
-  - CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE:-Release}
-  - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=/usr/bin/c++ -DCMAKE_C_COMPILER=/usr/bin/cc -DPYTHON_EXECUTABLE=/usr/bin/python3 -DBUILD_FEM_NETGEN=ON"
-  - CMAKE_OPTS="-DBUILD_FEM_NETGEN=ON -DFREECAD_RELEASE_PDB=OFF -DFREECAD_RELEASE_SEH=OFF" 
 
 before_install:
 - |
