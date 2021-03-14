@@ -1,7 +1,7 @@
 os: windows
 language: cpp
 
-before_install:
+install:
 - |
   curl -L https://github.com/apeltauer/FreeCAD/releases/download/LibPack_12.5.2/FreeCADLibs_12.5.2_x64_VC17.7z --output FreeCADLibs.7z
   7z x FreeCADLibs.7z > /dev/null
@@ -13,22 +13,31 @@ before_install:
   curl -L https://github.com/Tencent/rapidjson/archive/v1.1.0.zip --output rapidjson-1.1.0.zip
   7z x rapidjson-1.1.0.zip 
   rm -f rapidjson-1.1.0.zip
+
+before_script:
+- |
   BASE=$PWD
-  CMAKE_OPTS="\
-  -D3RDPARTY_FREETYPE_DLL:FILEPATH=$BASE/FreeCADLibs/bin/freetype.dll \
-  -D3RDPARTY_FREETYPE_DLL_DIR:PATH=$BASE/FreeCADLibs/bin \
-  -D3RDPARTY_FREETYPE_INCLUDE_DIR_freetype2:FILEPATH=$BASE/FreeCADLibs/include/freetype2 \
-  -D3RDPARTY_FREETYPE_INCLUDE_DIR_ft2build:FILEPATH=$BASE/FreeCADLibs/include/freetype2 \
-  -D3RDPARTY_FREETYPE_LIBRARY:FILEPATH=$BASE/FreeCADLibs/lib/freetype.lib \
-  -D3RDPARTY_FREETYPE_LIBRARY_DIR:PATH=$BASE/FreeCADLibs/lib \
-  -D3RDPARTY_RAPIDJSON_DIR:PATH=$BASE/rapidjson-1.1.0 \
-  -D3RDPARTY_RAPIDJSON_INCLUDE_DIR:PATH=$BASE/rapidjson-1.1.0/include \
-  -D3RDPARTY_TCL_DLL_DIR:FILEPATH=$BASE/FreeCADLibs/bin \
-  -D3RDPARTY_TCL_INCLUDE_DIR:FILEPATH=$BASE/FreeCADLibs/include \
-  -D3RDPARTY_TCL_LIBRARY_DIR:FILEPATH=$BASE/FreeCADLibs/lib \
-  -D3RDPARTY_TK_DLL_DIR:FILEPATH=$BASE/FreeCADLibs/bin \
-  -D3RDPARTY_TK_INCLUDE_DIR:FILEPATH=$BASE/FreeCADLibs/include \
-  -D3RDPARTY_TK_LIBRARY_DIR:FILEPATH=$BASE/FreeCADLibs/lib"
-  cmake -D ${CMAKE_OPTS} -A x64 -S occt -B build
-  cmake --build build --config Release
+  cat > CMackeCache.txt << EOC
+  3RDPARTY_FREETYPE_DLL:FILEPATH=$BASE/FreeCADLibs/bin/freetype.dll 
+  3RDPARTY_FREETYPE_DLL_DIR:PATH=$BASE/FreeCADLibs/bin 
+  3RDPARTY_FREETYPE_INCLUDE_DIR_freetype2:FILEPATH=$BASE/FreeCADLibs/include/freetype2 
+  3RDPARTY_FREETYPE_INCLUDE_DIR_ft2build:FILEPATH=$BASE/FreeCADLibs/include/freetype2 
+  3RDPARTY_FREETYPE_LIBRARY:FILEPATH=$BASE/FreeCADLibs/lib/freetype.lib 
+  3RDPARTY_FREETYPE_LIBRARY_DIR:PATH=$BASE/FreeCADLibs/lib 
+  3RDPARTY_TCL_DLL_DIR:FILEPATH=$BASE/FreeCADLibs/bin 
+  3RDPARTY_TCL_INCLUDE_DIR:FILEPATH=$BASE/FreeCADLibs/include 
+  3RDPARTY_TCL_LIBRARY_DIR:FILEPATH=$BASE/FreeCADLibs/lib 
+  3RDPARTY_TK_DLL_DIR:FILEPATH=$BASE/FreeCADLibs/bin 
+  3RDPARTY_TK_INCLUDE_DIR:FILEPATH=$BASE/FreeCADLibs/include 
+  3RDPARTY_TK_LIBRARY_DIR:FILEPATH=$BASE/FreeCADLibs/lib
+  USE_RAPIDJSON:BOOL=ON
+  3RDPARTY_RAPIDJSON_DIR:PATH=$BASE/rapidjson-1.1.0 
+  3RDPARTY_RAPIDJSON_INCLUDE_DIR:PATH=$BASE/rapidjson-1.1.0/include 
+  EOC
+  for i in `cat build-run.1`; do; echo -n "$i "; done; > targets
+
+script:
+- |
+  cmake -C ./CMakeCache.txt -A x64 -S occt -B build
+  cmake --build build --config Release -t `cat targets.test`
   
